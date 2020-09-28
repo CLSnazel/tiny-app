@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
   "repository": {
     "type": "git",
@@ -16,5 +16,8 @@
   "bugs": {
     "url": "https://github.com/CLSnazel/tiny-app/issues"
   },
-  "homepage": "https://github.com/CLSnazel/tiny-app#readme"
+  "homepage": "https://github.com/CLSnazel/tiny-app#readme",
+  "devDependencies": {
+    "express": "^4.17.1"
+  }
 }
