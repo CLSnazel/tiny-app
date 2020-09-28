@@ -18,6 +18,7 @@
   },
   "homepage": "https://github.com/CLSnazel/tiny-app#readme",
   "devDependencies": {
+    "ejs": "^3.1.5",
     "express": "^4.17.1"
   }
 }
