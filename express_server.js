@@ -16,7 +16,7 @@ const generateRandomString = function() {
   for(let i = 0; i < newLength; i++ ) {
     let charNumCoin = Math.random();
     //if number pick random num between 0-9
-    if (charNumCoin > .5) {
+    if (charNumCoin > .74) {
       let randomNum = Math.floor(Math.random() * 10);
       newString += randomNum.toString();
     } else {
@@ -62,6 +62,26 @@ app.post('/urls', (req, res) => {
   res.statusCode = 302;
   res.redirect(`/urls/${newCode}`);
 });
+
+app.post('/urls/:shortURL/delete', (req, res) => {
+  let deleteID = req.params.shortURL;
+  if (urlDatabase[deleteID]) {
+    delete urlDatabase[deleteID];
+  } else {
+    //what do if it no there?
+    //res.statusCode = 404;
+  }
+  res.redirect('/urls');
+});
+
+app.post('/urls/:shortURL', (req, res) => {
+  let modID = req.params.shortURL;
+  if (urlDatabase[modID]) {
+    urlDatabase[modID] = req.body['new-longURL'];
+  }
+  res.redirect('/urls');
+});
+
 app.get('/urls/:shortURL', (req, res) => {
 
   // res.end(`${req.params}`);
