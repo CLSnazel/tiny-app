@@ -7,7 +7,7 @@
   </head>
 
   <body>
-    <%- include('../partials/_header', { username:username }); %>
+    <%- include('../partials/_header', { user: (user ? user : undefined) }); %>
     <div class="card text-center">
         <div class="card-header"></div>
         <div class="card-body">

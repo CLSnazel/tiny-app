@@ -1,14 +1,29 @@
 const express = require('express');
+const morgan = require('morgan')
+const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = 8080;
-const cookieParser = require('cookie-parser');
+
+
+const bodyParser = require("body-parser");
 
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
 };
 
-const bodyParser = require("body-parser");
+const users = { 
+  "userRandomID": {
+    id: "userRandomID", 
+    email: "user@example.com", 
+    password: "purple-monkey-dinosaur"
+  },
+ "user2RandomID": {
+    id: "user2RandomID", 
+    email: "user2@example.com", 
+    password: "dishwasher-funk"
+  }
+};
 
 const generateRandomString = function() {
   let newLength = 6;
@@ -24,7 +39,7 @@ const generateRandomString = function() {
       //else char coin flip upper/lower case
       let caseCoin = Math.random();
       //generate random unicode index offset from 0-26
-      let charIndex = Math.floor(Math.random() * 27);
+      let charIndex = Math.floor(Math.random() * 26);
       //first letter in lowercase latin is 97
       let firstLetterCode = 97;
       if (caseCoin > .5) {
@@ -38,8 +53,10 @@ const generateRandomString = function() {
   }
   return newString;
 }
+
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
+app.use(morgan('dev'));
 
 app.set('view engine', 'ejs');
 
@@ -49,17 +66,21 @@ app.get('/', (req, res) => {
 
 app.get('/urls', (req, res) => {
   //res.json(urlDatabase);
+  let uid = req.cookies['user_id'];
+  let user =  users[uid];
   const templateVars = {
     title:"URL Index", 
     urls: urlDatabase,
-    username: req.cookies['username']
+    user,
   };
+  console.log(templateVars, uid);
   res.render('pages/urls_index', templateVars);
 });
 
 app.get('/urls/new', (req, res) => {
+  let uid = req.cookies['user_id']
   const templateVars = {
-    username: req.cookies['username']
+    user: users[uid]
   }
   res.render('pages/urls_new', templateVars);
 });
@@ -68,10 +89,11 @@ app.get('/urls/:shortURL', (req, res) => {
 
   // res.end(`${req.params}`);
   // console.log(req.params);
+  let uid = req.cookies['user_id']
   const urlVars = {
     shortURL:req.params.shortURL, 
     longURL:urlDatabase[req.params.shortURL],
-    username:req.cookies['username'],
+    user:users[uid],
   };
   res.render('pages/urls_show', urlVars);
 });
@@ -120,17 +142,24 @@ app.post('/urls/:shortURL', (req, res) => {
 
 ///User account / login / logout / register POST
 app.post('/login', (req, res) => {
-  let username = req.body.username;
-  res.cookie('username', username); 
+  let uid = req.body.user_id;
+  res.cookie('user_id', uid); 
   res.redirect('/urls');
 });
 
 app.post('/logout', (req, res) => {
-  res.clearCookie('username');
+  res.clearCookie('user_id');
   res.redirect('/urls');
 });
 
 app.post('/register', (req, res) => {
+  //console.log(req.body); 
+  let email = req.body.email;
+  let password = req.body.password;
+  let uid = generateRandomString()
+  users[uid] = {id: uid, email, password};
+  //console.log(users);
+  res.cookie('user_id', uid);
   res.redirect('/urls');
 });
 
