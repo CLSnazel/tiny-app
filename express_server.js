@@ -1,5 +1,5 @@
 const express = require('express');
-const morgan = require('morgan')
+const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = 8080;
@@ -12,15 +12,15 @@ const urlDatabase = {
   "9sm5xK": "http://www.google.com"
 };
 
-const users = { 
+const users = {
   "userRandomID": {
-    id: "userRandomID", 
-    email: "user@example.com", 
+    id: "userRandomID",
+    email: "user@example.com",
     password: "purple-monkey-dinosaur"
   },
- "user2RandomID": {
-    id: "user2RandomID", 
-    email: "user2@example.com", 
+  "user2RandomID": {
+    id: "user2RandomID",
+    email: "user2@example.com",
     password: "dishwasher-funk"
   }
 };
@@ -29,7 +29,7 @@ const generateRandomString = function() {
   let newLength = 6;
   let newString = "";
   //coinflip number or char
-  for(let i = 0; i < newLength; i++ ) {
+  for (let i = 0; i < newLength; i++) {
     let charNumCoin = Math.random();
     //if number pick random num between 0-9
     if (charNumCoin > .74) {
@@ -45,25 +45,25 @@ const generateRandomString = function() {
       if (caseCoin > .5) {
         //first letter in uppercase latin is 65
         firstLetterCode = 65;
-      } 
+      }
       //add uppercase. Using string from char code with index as offset
       newString += String.fromCharCode(firstLetterCode + charIndex);
 
     }
   }
   return newString;
-}
+};
 
 const checkExistingKeyVal = function(obj, key, value) {
   let existFlag = false;
   for (const item in obj) {
-    if(obj[item][key] === value){
+    if (obj[item][key] === value) {
       existFlag = true;
       break;
     }
   }
   return existFlag;
-}
+};
 
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
@@ -80,7 +80,7 @@ app.get('/urls', (req, res) => {
   let uid = req.cookies['user_id'];
   let user =  users[uid];
   const templateVars = {
-    title:"URL Index", 
+    title:"URL Index",
     urls: urlDatabase,
     user,
   };
@@ -89,10 +89,10 @@ app.get('/urls', (req, res) => {
 });
 
 app.get('/urls/new', (req, res) => {
-  let uid = req.cookies['user_id']
+  let uid = req.cookies['user_id'];
   const templateVars = {
     user: users[uid]
-  }
+  };
   res.render('pages/urls_new', templateVars);
 });
 
@@ -100,9 +100,9 @@ app.get('/urls/:shortURL', (req, res) => {
 
   // res.end(`${req.params}`);
   // console.log(req.params);
-  let uid = req.cookies['user_id']
+  let uid = req.cookies['user_id'];
   const urlVars = {
-    shortURL:req.params.shortURL, 
+    shortURL:req.params.shortURL,
     longURL:urlDatabase[req.params.shortURL],
     user:users[uid],
   };
@@ -116,16 +116,18 @@ app.get('/u/:shortURL', (req, res) => {
 
 app.get('/register', (req, res) => {
   res.render('pages/account_new', { user:undefined });
-})
+});
 
 app.get('/login', (req, res) => {
   res.render('pages/account_login', { user:undefined });
-})
+});
 
 // app.get('/hello', (req, res) => {
 //   res.send("<html><body>Hello <b>World!</b></body></html>")
 // })
 
+
+//action routes - POST
 app.post('/urls', (req, res) => {
   console.log(req.body);
   let newCode = generateRandomString();
@@ -158,7 +160,7 @@ app.post('/urls/:shortURL', (req, res) => {
 ///User account / login / logout / register POST
 app.post('/login', (req, res) => {
   let uid = req.body.user_id;
-  res.cookie('user_id', uid); 
+  res.cookie('user_id', uid);
   res.redirect('/urls');
 });
 
@@ -168,7 +170,7 @@ app.post('/logout', (req, res) => {
 });
 
 app.post('/register', (req, res) => {
-  //console.log(req.body); 
+  //console.log(req.body);
   let email = req.body.email;
   let password = req.body.password;
   let emailExist = checkExistingKeyVal(users, "email", email);
@@ -176,12 +178,12 @@ app.post('/register', (req, res) => {
     //res.statusCode = 400;
     res.redirect(400, '/register');
   } else {
-    let uid = generateRandomString()
+    let uid = generateRandomString();
     users[uid] = {id: uid, email, password};
     console.log(users);
     res.cookie('user_id', uid);
     res.redirect('/urls');
-  } 
+  }
   
 });
 
