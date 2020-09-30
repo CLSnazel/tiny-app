@@ -11,17 +11,8 @@
   <body>
     <%- include('../partials/_header', { user: (user ? user : undefined) }); %>
     <main>
-      <form  method="POST" action="/register">
-        <div class="form-group">
-          <label for="email" >Email:</label>
-          <input type="email" name='email' placeholder="name@website.com" class="form-control"/>
-        </div>
-        <!-- <input type='text' name='username'/> -->
-        <div class="form-group">
-          <label for="password" >Password:</label>
-          <input type='password' name='password' placeholder="password" class="form-control"/>
-        </div>
-        <button type="submit" class="btn btn-primary">Create New Account</button>
+      <form  method="POST" action="/login">
+        <%- include('../partials/_email_pw_input', {confirmMsg:'Create New Account'}) %>
       </form>
     </main>
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>

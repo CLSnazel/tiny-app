@@ -115,7 +115,11 @@ app.get('/u/:shortURL', (req, res) => {
 });
 
 app.get('/register', (req, res) => {
-  res.render('pages/account_new', {user:undefined});
+  res.render('pages/account_new', { user:undefined });
+})
+
+app.get('/login', (req, res) => {
+  res.render('pages/account_login', { user:undefined });
 })
 
 // app.get('/hello', (req, res) => {
@@ -177,9 +181,7 @@ app.post('/register', (req, res) => {
     console.log(users);
     res.cookie('user_id', uid);
     res.redirect('/urls');
-  }
- 
-  
+  } 
   
 });
 
