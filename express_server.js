@@ -63,6 +63,32 @@ app.get('/urls/new', (req, res) => {
   }
   res.render('pages/urls_new', templateVars);
 });
+
+app.get('/urls/:shortURL', (req, res) => {
+
+  // res.end(`${req.params}`);
+  // console.log(req.params);
+  const urlVars = {
+    shortURL:req.params.shortURL, 
+    longURL:urlDatabase[req.params.shortURL],
+    username:req.cookies['username'],
+  };
+  res.render('pages/urls_show', urlVars);
+});
+
+app.get('/u/:shortURL', (req, res) => {
+  const longURL = urlDatabase[req.params.shortURL];
+  res.redirect(longURL);
+});
+
+app.get('/register', (req, res) => {
+  res.render('pages/account_new');
+})
+
+// app.get('/hello', (req, res) => {
+//   res.send("<html><body>Hello <b>World!</b></body></html>")
+// })
+
 app.post('/urls', (req, res) => {
   console.log(req.body);
   let newCode = generateRandomString();
@@ -91,6 +117,8 @@ app.post('/urls/:shortURL', (req, res) => {
   res.redirect('/urls');
 });
 
+
+///User account / login / logout / register POST
 app.post('/login', (req, res) => {
   let username = req.body.username;
   res.cookie('username', username); 
@@ -100,28 +128,13 @@ app.post('/login', (req, res) => {
 app.post('/logout', (req, res) => {
   res.clearCookie('username');
   res.redirect('/urls');
-})
-
-app.get('/urls/:shortURL', (req, res) => {
-
-  // res.end(`${req.params}`);
-  // console.log(req.params);
-  const urlVars = {
-    shortURL:req.params.shortURL, 
-    longURL:urlDatabase[req.params.shortURL],
-    username:req.cookies['username'],
-  };
-  res.render('pages/urls_show', urlVars);
 });
 
-app.get('/u/:shortURL', (req, res) => {
-  const longURL = urlDatabase[req.params.shortURL];
-  res.redirect(longURL);
+app.post('/register', (req, res) => {
+  res.redirect('/urls');
 });
 
-app.get('/hello', (req, res) => {
-  res.send("<html><body>Hello <b>World!</b></body></html>")
-})
+
 app.listen(PORT, () => {
   console.log(`Example app listnening on port ${PORT}`);
 });
