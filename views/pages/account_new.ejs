@@ -9,7 +9,7 @@
     <title>Register - TinyApp Example</title>
   </head>
   <body>
-    <%- include('../partials/_header', {email:undefined}) %>
+    <%- include('../partials/_header', { user: (user ? user : undefined) }); %>
     <main>
       <form  method="POST" action="/register">
         <div class="form-group">

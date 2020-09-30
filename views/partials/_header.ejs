@@ -5,11 +5,11 @@
       <span class="navbar-toggler-icon"></span>
     </button>
     <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
-      <div class="navbar-nav">
+      <div class="navbar-nav d-flex">
         <a class="nav-item nav-link" href="/urls">My URLs</a>
         <a class="nav-item nav-link" href="/urls/new">Create New URL</a>
         <% if (user) {%>
-          <div style="float: right;">
+          <div class="align-self-end ml-auto p-2" style="text-align: right;"> 
             <span>Hello, <%= user.email %>!</span>
             <form method="POST" action="/logout">
               <button type="submit">Logout</button>

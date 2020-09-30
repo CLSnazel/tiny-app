@@ -54,6 +54,17 @@ const generateRandomString = function() {
   return newString;
 }
 
+const checkExistingKeyVal = function(obj, key, value) {
+  let existFlag = false;
+  for (const item in obj) {
+    if(obj[item][key] === value){
+      existFlag = true;
+      break;
+    }
+  }
+  return existFlag;
+}
+
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 app.use(morgan('dev'));
@@ -104,7 +115,7 @@ app.get('/u/:shortURL', (req, res) => {
 });
 
 app.get('/register', (req, res) => {
-  res.render('pages/account_new');
+  res.render('pages/account_new', {user:undefined});
 })
 
 // app.get('/hello', (req, res) => {
@@ -156,11 +167,20 @@ app.post('/register', (req, res) => {
   //console.log(req.body); 
   let email = req.body.email;
   let password = req.body.password;
-  let uid = generateRandomString()
-  users[uid] = {id: uid, email, password};
-  //console.log(users);
-  res.cookie('user_id', uid);
-  res.redirect('/urls');
+  let emailExist = checkExistingKeyVal(users, "email", email);
+  if (!email || !password || emailExist) {
+    //res.statusCode = 400;
+    res.redirect(400, '/register');
+  } else {
+    let uid = generateRandomString()
+    users[uid] = {id: uid, email, password};
+    console.log(users);
+    res.cookie('user_id', uid);
+    res.redirect('/urls');
+  }
+ 
+  
+  
 });
 
 
