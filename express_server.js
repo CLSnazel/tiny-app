@@ -54,15 +54,21 @@ const generateRandomString = function() {
   return newString;
 };
 
-const checkExistingKeyVal = function(obj, key, value) {
-  let existFlag = false;
+//given an object, key and value
+//return the nested object where the given key equates to hte given value
+//else return undefined
+const findExistingKeyVal = function(obj, key, value) {
+  //let existFlag = false;
+  let matchingObj = undefined;
   for (const item in obj) {
     if (obj[item][key] === value) {
-      existFlag = true;
+      //existFlag = true;
+      matchingObj = obj[item];
       break;
     }
   }
-  return existFlag;
+  //return existFlag;
+  return matchingObj;
 };
 
 app.use(bodyParser.urlencoded({extended: true}));
@@ -159,9 +165,23 @@ app.post('/urls/:shortURL', (req, res) => {
 
 ///User account / login / logout / register POST
 app.post('/login', (req, res) => {
-  let uid = req.body.user_id;
-  res.cookie('user_id', uid);
-  res.redirect('/urls');
+  //let uid = req.body.user_id;
+  let {email, password} = req.body;
+  //check password and email are not empty
+  if (!email || !password) {
+    res.redirect(403, '/login');
+  } else {
+    //check that email is in users, and password matches entry
+    let loginUser = findExistingKeyVal(users, 'email', email);
+    if (loginUser && loginUser.password === password) {
+      res.cookie('user_id', loginUser.id);
+      res.redirect('/urls');
+    } else {
+      //if it is not in the user object, or password does not match, send 403
+      res.redirect(403, '/login');
+    }
+  }
+  
 });
 
 app.post('/logout', (req, res) => {
@@ -173,7 +193,7 @@ app.post('/register', (req, res) => {
   //console.log(req.body);
   let email = req.body.email;
   let password = req.body.password;
-  let emailExist = checkExistingKeyVal(users, "email", email);
+  let emailExist = findExistingKeyVal(users, "email", email);
   if (!email || !password || emailExist) {
     //res.statusCode = 400;
     res.redirect(400, '/register');
