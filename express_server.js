@@ -1,6 +1,10 @@
 const express = require('express');
 const morgan = require('morgan');
 //const cookieParser = require('cookie-parser');
+const { findExistingKeyVal } = require('./findExistingKeyVal');
+const { generateRandomString } = require('./generateRandomString');
+const { urlsForUser } = require('./urlsForUser');
+const { getUserByEmail } = require('./getUserByEmail');
 const cookieSession = require('cookie-session');
 const app = express();
 const PORT = 8080;
@@ -20,6 +24,8 @@ const urlDatabase = {
   r4f523: { longURL: 'https://duckduckgo.com', userID: 'userRandomID'}
 };
 
+
+//preset users for testing
 const users = {
   "userRandomID": {
     id: "userRandomID",
@@ -32,68 +38,9 @@ const users = {
     password: "dishwasher-funk"
   }
 };
-
+//hashing preset users passwords from plain-text
 users["aJ48lW"].password = bcrypt.hashSync(users["aJ48lW"].password, 10);
 users["userRandomID"].password = bcrypt.hashSync(users["userRandomID"].password, 10);
-
-const generateRandomString = function() {
-  let newLength = 6;
-  let newString = "";
-  //coinflip number or char
-  for (let i = 0; i < newLength; i++) {
-    let charNumCoin = Math.random();
-    //if number pick random num between 0-9
-    if (charNumCoin > .74) {
-      let randomNum = Math.floor(Math.random() * 10);
-      newString += randomNum.toString();
-    } else {
-      //else char coin flip upper/lower case
-      let caseCoin = Math.random();
-      //generate random unicode index offset from 0-26
-      let charIndex = Math.floor(Math.random() * 26);
-      //first letter in lowercase latin is 97
-      let firstLetterCode = 97;
-      if (caseCoin > .5) {
-        //first letter in uppercase latin is 65
-        firstLetterCode = 65;
-      }
-      //add uppercase. Using string from char code with index as offset
-      newString += String.fromCharCode(firstLetterCode + charIndex);
-
-    }
-  }
-  return newString;
-};
-
-//filter URLS
-//given a user id as string, return an object of urls that have a matching id value
-const urlsForUser = function(uid) {
-  let filteredObj = {};
-  for (let url in urlDatabase) {
-    let matchingObj = findExistingKeyVal({url:urlDatabase[url]}, "userID", uid);
-    if (matchingObj) {
-      filteredObj[url] = matchingObj;
-    }
-  }
-  return filteredObj;
-}
-
-//given an object, key and value
-//return the nested object where the given key equates to hte given value
-//else return undefined
-const findExistingKeyVal = function(obj, key, value) {
-  //let existFlag = false;
-  let matchingObj = undefined;
-  for (const item in obj) {
-    if (obj[item][key] === value) {
-      //existFlag = true;
-      matchingObj = obj[item];
-      break;
-    }
-  }
-  //return existFlag;
-  return matchingObj;
-};
 
 app.use(bodyParser.urlencoded({extended: true}));
 //app.use(cookieParser());
@@ -118,7 +65,7 @@ app.get('/urls', (req, res) => {
   let user = users[uid];
   // if (user) {
   // }
-  let userURLS = urlsForUser(uid);
+  let userURLS = urlsForUser(uid, urlDatabase);
   const templateVars = {
     title:"URL Index",
     urls: userURLS,
@@ -246,12 +193,17 @@ app.post('/login', (req, res) => {
     res.redirect(403, '/login');
   } else {
     //check that email is in users, and password matches entry
-    let loginUser = findExistingKeyVal(users, 'email', email);
-    let pwMatch = bcrypt.compareSync(password, loginUser.password);
-    if (pwMatch) {
-      //res.cookie('user_id', loginUser.id);
-      req.session.user_id = loginUser.id; 
-      res.redirect('/urls');
+    let loginUser = getUserByEmail(email, users);
+    if (loginUser) {
+      let pwMatch = bcrypt.compareSync(password, loginUser.password);
+      if (pwMatch) {
+        //res.cookie('user_id', loginUser.id);
+        req.session.user_id = loginUser.id; 
+        res.redirect('/urls');
+      } else {
+        //if it is not in the user object, or password does not match, send 403
+        res.redirect(403, '/login');
+      }
     } else {
       //if it is not in the user object, or password does not match, send 403
       res.redirect(403, '/login');
@@ -272,7 +224,7 @@ app.post('/register', (req, res) => {
 
   let email = req.body.email;
   let password = req.body.password;
-  let emailExist = findExistingKeyVal(users, "email", email);
+  let emailExist = getUserByEmail(email, users);
 
   if (!email || !password || emailExist) {
     res.redirect(400, '/register');
