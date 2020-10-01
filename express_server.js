@@ -1,10 +1,9 @@
 const express = require('express');
 const morgan = require('morgan');
 //const cookieParser = require('cookie-parser');
-const { findExistingKeyVal } = require('./findExistingKeyVal');
-const { generateRandomString } = require('./generateRandomString');
-const { urlsForUser } = require('./urlsForUser');
-const { getUserByEmail } = require('./getUserByEmail');
+const { generateRandomString } = require('./helpers/generateRandomString');
+const { urlsForUser } = require('./helpers/urlsForUser');
+const { getUserByEmail } = require('./helpers/getUserByEmail');
 const cookieSession = require('cookie-session');
 const app = express();
 const PORT = 8080;
@@ -239,7 +238,6 @@ app.post('/register', (req, res) => {
   }
   
 });
-
 
 app.listen(PORT, () => {
   console.log(`Example app listnening on port ${PORT}`);
