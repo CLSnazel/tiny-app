@@ -1,6 +1,7 @@
 const express = require('express');
 const morgan = require('morgan');
-const cookieParser = require('cookie-parser');
+//const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const app = express();
 const PORT = 8080;
 const bcrypt = require('bcrypt');
@@ -95,7 +96,12 @@ const findExistingKeyVal = function(obj, key, value) {
 };
 
 app.use(bodyParser.urlencoded({extended: true}));
-app.use(cookieParser());
+//app.use(cookieParser());
+app.use(cookieSession({
+  name:'session',
+  keys: ['catzR@m@z!ngi<3th3m'],
+  maxAge: 24 * 60 * 60 * 1000
+}));
 app.use(morgan('dev'));
 
 
@@ -108,7 +114,7 @@ app.get('/', (req, res) => {
 
 app.get('/urls', (req, res) => {
   //res.json(urlDatabase);
-  let uid = req.cookies['user_id'];
+  let uid = req.session['user_id'];
   let user = users[uid];
   // if (user) {
   // }
@@ -123,7 +129,7 @@ app.get('/urls', (req, res) => {
 });
 
 app.get('/urls/new', (req, res) => {
-  let uid = req.cookies['user_id'];
+  let uid = req.session['user_id'];
   let user = users[uid]
   if (user) {
     const templateVars = {
@@ -139,7 +145,7 @@ app.get('/urls/:shortURL', (req, res) => {
 
   // res.end(`${req.params}`);
   // console.log(req.params);
-  let uid = req.cookies['user_id'];
+  let uid = req.session['user_id'];
   let {shortURL} = req.params
   let urlData = urlDatabase[shortURL];
 
@@ -184,7 +190,7 @@ app.get('/login', (req, res) => {
 
 //action routes - POST
 app.post('/urls', (req, res) => {
-  let uid = req.cookies['user_id'];
+  let uid = req.session['user_id'];
   if (uid) {
     // console.log(req.body);
     let newCode = generateRandomString();
@@ -201,7 +207,7 @@ app.post('/urls', (req, res) => {
 });
 
 app.post('/urls/:shortURL/delete', (req, res) => {
-  let uid = req.cookies['user_id'];
+  let uid = req.session['user_id'];
   if (uid) {
     let deleteID = req.params.shortURL;
     if (urlDatabase[deleteID]) {
@@ -217,7 +223,7 @@ app.post('/urls/:shortURL/delete', (req, res) => {
 });
 
 app.post('/urls/:shortURL', (req, res) => {
-  let uid = req.cookies['user_id'];
+  let uid = req.session['user_id'];
   if (uid) {
     let modID = req.params.shortURL;
     let longURL = req.body['new-longURL']
@@ -243,7 +249,8 @@ app.post('/login', (req, res) => {
     let loginUser = findExistingKeyVal(users, 'email', email);
     let pwMatch = bcrypt.compareSync(password, loginUser.password);
     if (pwMatch) {
-      res.cookie('user_id', loginUser.id);
+      //res.cookie('user_id', loginUser.id);
+      req.session.user_id = loginUser.id; 
       res.redirect('/urls');
     } else {
       //if it is not in the user object, or password does not match, send 403
@@ -254,7 +261,8 @@ app.post('/login', (req, res) => {
 });
 
 app.post('/logout', (req, res) => {
-  res.clearCookie('user_id');
+  //res.clearCookie('user_id');
+  req.session = null;
   res.redirect('/urls');
 });
 
@@ -273,7 +281,8 @@ app.post('/register', (req, res) => {
     let hashPW = bcrypt.hashSync(password, 10);
     users[uid] = {id: uid, email, password:hashPW};
     //console.log(users);
-    res.cookie('user_id', uid);
+    //res.cookie('user_id', uid);
+    req.session.user_id = uid;
     res.redirect('/urls');
   }
   
