@@ -3,6 +3,7 @@ const morgan = require('morgan');
 const cookieParser = require('cookie-parser');
 const app = express();
 const PORT = 8080;
+const bcrypt = require('bcrypt');
 
 
 const bodyParser = require("body-parser");
@@ -18,7 +19,6 @@ const urlDatabase = {
   r4f523: { longURL: 'https://duckduckgo.com', userID: 'userRandomID'}
 };
 
-
 const users = {
   "userRandomID": {
     id: "userRandomID",
@@ -31,6 +31,9 @@ const users = {
     password: "dishwasher-funk"
   }
 };
+
+users["aJ48lW"].password = bcrypt.hashSync(users["aJ48lW"].password, 10);
+users["userRandomID"].password = bcrypt.hashSync(users["userRandomID"].password, 10);
 
 const generateRandomString = function() {
   let newLength = 6;
@@ -95,6 +98,7 @@ app.use(bodyParser.urlencoded({extended: true}));
 app.use(cookieParser());
 app.use(morgan('dev'));
 
+
 app.set('view engine', 'ejs');
 
 app.get('/', (req, res) => {
@@ -145,7 +149,7 @@ app.get('/urls/:shortURL', (req, res) => {
   } else if (!urlData) {
     //invalid shortURL id
     res.render('pages/urls_show', {user:users[uid], shortURL:undefined, longURL:undefined});
-  } else if(urlData.userID !== uid) {
+  } else if (urlData.userID !== uid) {
     //invalid access
     res.render('pages/urls_show', {user:users[uid], shortURL, longURL:undefined})
   } else {
@@ -184,7 +188,7 @@ app.post('/urls', (req, res) => {
   if (uid) {
     // console.log(req.body);
     let newCode = generateRandomString();
-    let {longURL} = req.body
+    let { longURL } = req.body
     urlDatabase[newCode] = {
       longURL,
       userID: uid,
@@ -237,7 +241,8 @@ app.post('/login', (req, res) => {
   } else {
     //check that email is in users, and password matches entry
     let loginUser = findExistingKeyVal(users, 'email', email);
-    if (loginUser && loginUser.password === password) {
+    let pwMatch = bcrypt.compareSync(password, loginUser.password);
+    if (pwMatch) {
       res.cookie('user_id', loginUser.id);
       res.redirect('/urls');
     } else {
@@ -255,6 +260,8 @@ app.post('/logout', (req, res) => {
 
 app.post('/register', (req, res) => {
   //console.log(req.body);
+
+
   let email = req.body.email;
   let password = req.body.password;
   let emailExist = findExistingKeyVal(users, "email", email);
@@ -263,8 +270,9 @@ app.post('/register', (req, res) => {
     res.redirect(400, '/register');
   } else {
     let uid = generateRandomString();
-    users[uid] = {id: uid, email, password};
-    console.log(users);
+    let hashPW = bcrypt.hashSync(password, 10);
+    users[uid] = {id: uid, email, password:hashPW};
+    //console.log(users);
     res.cookie('user_id', uid);
     res.redirect('/urls');
   }
