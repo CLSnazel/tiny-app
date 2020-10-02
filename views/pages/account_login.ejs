@@ -10,7 +10,11 @@
 </head>
 <body>
   <%- include('../partials/_header', { user: (user ? user : undefined) }); %>
-  <main>
+  <main style="margin: 1em;">
+    <h1>Login:</h1>
+    <% if (errMsg) {%>
+      <p style="color:brown;"> <%= errMsg %> </p>
+    <%} %>
     <form  method="POST" action="/login">
       <%- include('../partials/_email_pw_input', {confirmMsg:'Login'}) %>
     </form>

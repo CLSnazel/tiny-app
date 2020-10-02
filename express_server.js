@@ -8,14 +8,7 @@ const cookieSession = require('cookie-session');
 const app = express();
 const PORT = 8080;
 const bcrypt = require('bcrypt');
-
-
 const bodyParser = require("body-parser");
-
-// const urlDatabase = {
-//   "b2xVn2": "http://www.lighthouselabs.ca",
-//   "9sm5xK": "http://www.google.com"
-// };
 
 const urlDatabase = {
   b6UTxQ: { longURL: "https://www.tsn.ca", userID: "aJ48lW" },
@@ -24,6 +17,17 @@ const urlDatabase = {
 };
 
 
+//=========================MIDDLEWARE==============================//
+app.use(bodyParser.urlencoded({extended: true}));
+app.use(cookieSession({
+  name:'session',
+  keys: ['catzR@m@z!ngi<3th3m'],
+  maxAge: 24 * 60 * 60 * 1000
+}));
+app.use(morgan('dev'));
+app.set('view engine', 'ejs');
+
+//================== DATABASES & HELPER FUNC ========================//
 //preset users for testing
 const users = {
   "userRandomID": {
@@ -41,18 +45,19 @@ const users = {
 users["aJ48lW"].password = bcrypt.hashSync(users["aJ48lW"].password, 10);
 users["userRandomID"].password = bcrypt.hashSync(users["userRandomID"].password, 10);
 
-app.use(bodyParser.urlencoded({extended: true}));
-//app.use(cookieParser());
-app.use(cookieSession({
-  name:'session',
-  keys: ['catzR@m@z!ngi<3th3m'],
-  maxAge: 24 * 60 * 60 * 1000
-}));
-app.use(morgan('dev'));
+//Helper: sets http status code, and passes user and errorMsg to error page.
+const renderErrorPage = function(res, httpCode, user, errMsg) {
+  res.status(httpCode);
+  const errVars = {
+    errMsg,
+    user
+  }
+  res.render('pages/error', errVars);
+}
 
+//=================================GET====================================//
 
-app.set('view engine', 'ejs');
-
+// GET / -> redirect to /urls when logged in, redirect to /login otherwise
 app.get('/', (req, res) => {
   //res.send('Hello!');
   let user = req.session.user_id;
@@ -63,6 +68,7 @@ app.get('/', (req, res) => {
   }
 });
 
+// GET /urls -> show table of urls if logged in, display message otherwise
 app.get('/urls', (req, res) => {
   //res.json(urlDatabase);
   let uid = req.session['user_id'];
@@ -76,10 +82,11 @@ app.get('/urls', (req, res) => {
     urls: userURLS,
     user,
   };
-  console.log(templateVars, uid);
+  
   res.render('pages/urls_index', templateVars);
 });
 
+// GET /urls/new -> show form to add new link if logged in, redirect to login otherwise
 app.get('/urls/new', (req, res) => {
   let uid = req.session['user_id'];
   let user = users[uid]
@@ -93,10 +100,9 @@ app.get('/urls/new', (req, res) => {
   }
 });
 
+// GET /urls/:shortURL -> show shortURL details if logged in and owned, show appropriate message otherwise
 app.get('/urls/:shortURL', (req, res) => {
 
-  // res.end(`${req.params}`);
-  // console.log(req.params);
   let uid = req.session['user_id'];
   let {shortURL} = req.params
   let urlData = urlDatabase[shortURL];
@@ -121,30 +127,43 @@ app.get('/urls/:shortURL', (req, res) => {
 
 });
 
+// GET /u/:shortURL -> redirect to specified longURL. render error page otherwise
 app.get('/u/:shortURL', (req, res) => {
   let {shortURL} = req.params
   const link = urlDatabase[shortURL];
-  res.redirect(link.longURL);
+  if (link) {
+    res.redirect(link.longURL);
+  } else {
+    let uid = req.session['user_id'];
+    renderErrorPage(res, 404, users[uid], "404. This link does not exist.");
+  }
 });
 
+// GET /register -> render registration form if not logged in. redirect to /urls otherwise 
 app.get('/register', (req, res) => {
+  let uid = req.session.user_id;
+  if (uid) {
+    res.redirect('/urls');
+  }
   res.render('pages/account_new', { user:undefined });
 });
 
+// GET /login -> render login form if not logged in. redirect to /urls otherwise
 app.get('/login', (req, res) => {
-  res.render('pages/account_login', { user:undefined });
+  let uid = req.session.user_id;
+  if (uid) {
+    res.redirect('/urls');
+  } else {
+    res.render('pages/account_login', { user:undefined, errMsg:undefined });
+  }
 });
 
-// app.get('/hello', (req, res) => {
-//   res.send("<html><body>Hello <b>World!</b></body></html>")
-// })
+//====================POST==============================//
 
-
-//action routes - POST
+//POST /urls -> add new URL to urlDatabase with user's ID.
 app.post('/urls', (req, res) => {
   let uid = req.session['user_id'];
   if (uid) {
-    // console.log(req.body);
     let newCode = generateRandomString();
     let { longURL } = req.body
     urlDatabase[newCode] = {
@@ -154,79 +173,88 @@ app.post('/urls', (req, res) => {
     res.statusCode = 302;
     res.redirect(`/urls/${newCode}`);
   } else {
-    res.redirect(401, '/login');
+    renderErrorPage(res, 401, undefined, "401. You must be logged in to complete this action.");
   }
 });
 
+//POST /urls/:shortURL/delete -> delete specified shortURL from database if authorized
 app.post('/urls/:shortURL/delete', (req, res) => {
   let uid = req.session['user_id'];
   if (uid) {
     let deleteID = req.params.shortURL;
     if (urlDatabase[deleteID]) {
-      delete urlDatabase[deleteID];
+      if (urlDatabase[deleteID].userID === uid) {
+        delete urlDatabase[deleteID];
+        res.redirect('/urls');
+      } else {
+        renderErrorPage(res, 401, users[uid], "401. Your account is not allowed to modify this link");
+      }
     } else {
-      //what do if it no there?
-      //res.statusCode = 404;
+      renderErrorPage(res, 404,  users[uid], "404. This link does not exist.");
     }
-    res.redirect('/urls');
   } else {
-    res.redirect(401, '/login');
+    renderErrorPage(res, 401, undefined, "401. You must be logged in to complete this action.");
   }
 });
 
+//POST /urls/:shortURL -> update longURL for specified shortURL in urlDatabase if authorized
 app.post('/urls/:shortURL', (req, res) => {
   let uid = req.session['user_id'];
   if (uid) {
     let modID = req.params.shortURL;
-    let longURL = req.body['new-longURL']
-    if (urlDatabase[modID]) {
-      urlDatabase[modID] = {longURL, userID:uid};
+    if (urlDatabase[modID].userID === uid){
+      if (urlDatabase[modID]) {
+        let longURL = req.body['new-longURL']
+        urlDatabase[modID] = {longURL, userID:uid};
+        res.redirect('/urls');
+      } else {
+        renderErrorPage(res, 404,  users[uid], "404. This link does not exist.");
+      }
+    } else {
+      renderErrorPage(res, 401, users[uid], "401. Your account is not allowed to modify this link");
     }
-    res.redirect('/urls');
   } else {
-    res.redirect(401, '/login');
+    renderErrorPage(res, 401, undefined, "401. You must be logged in to complete this action.");
   }
 });
 
-
-///User account / login / logout / register POST
+//POST /login -> sets session cookies if email/pw credentials are valid
 app.post('/login', (req, res) => {
   //let uid = req.body.user_id;
   let {email, password} = req.body;
+
   //check password and email are not empty
   if (!email || !password) {
     res.redirect(403, '/login');
   } else {
+
     //check that email is in users, and password matches entry
     let loginUser = getUserByEmail(email, users);
     if (loginUser) {
       let pwMatch = bcrypt.compareSync(password, loginUser.password);
       if (pwMatch) {
-        //res.cookie('user_id', loginUser.id);
         req.session.user_id = loginUser.id; 
         res.redirect('/urls');
       } else {
-        //if it is not in the user object, or password does not match, send 403
         res.redirect(403, '/login');
       }
+
     } else {
-      //if it is not in the user object, or password does not match, send 403
+      //email not in users
       res.redirect(403, '/login');
     }
   }
   
 });
 
+//POST /logout -> clears session cookies when clicked
 app.post('/logout', (req, res) => {
-  //res.clearCookie('user_id');
   req.session = null;
   res.redirect('/urls');
 });
 
+//POST /register -> adds user to users database with valid email/pw input
 app.post('/register', (req, res) => {
-  //console.log(req.body);
-
-
   let email = req.body.email;
   let password = req.body.password;
   let emailExist = getUserByEmail(email, users);
@@ -237,14 +265,17 @@ app.post('/register', (req, res) => {
     let uid = generateRandomString();
     let hashPW = bcrypt.hashSync(password, 10);
     users[uid] = {id: uid, email, password:hashPW};
-    //console.log(users);
-    //res.cookie('user_id', uid);
+
+    //Can be used to test hashed pw
+    // console.log(users);
+    
     req.session.user_id = uid;
     res.redirect('/urls');
   }
   
 });
 
+//========================== SERVER LISTENER ================================
 app.listen(PORT, () => {
   console.log(`Example app listnening on port ${PORT}`);
 });
