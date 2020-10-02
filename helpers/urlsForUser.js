@@ -10,6 +10,6 @@ const urlsForUser = function(uid, urlDatabase) {
     }
   }
   return filteredObj;
-}
+};
 
 module.exports = { urlsForUser };
