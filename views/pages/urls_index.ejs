@@ -28,9 +28,7 @@
               <td><%= url %></td>
               <td><%= urls[url]['longURL'] %></td>
               <td>
-                <form action="/urls/<%= url %>"> 
-                  <button label='edit' type='submit' class="btn btn-warning">Edit</button>
-                </form>
+                <a href="/urls/<%= url %>" class="btn btn-warning">Edit</a>
               </td>
               <td>
                 <form method="POST" action="/urls/<%= url %>/delete"> 
@@ -41,10 +39,12 @@
           <% } %>
         </tbody>
       </table>
+      <p>Create a new short link <a href="/urls/new">here!</a></p>
       <%} else {%>
         <p>Oops! You're not logged in. Please <a href="/login">login</a> or <a href="/register">register</a> to get started!</p>
 
       <%} %>
+      
     </main>
     <!-- Bootstrap JS -->
     <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js" integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>

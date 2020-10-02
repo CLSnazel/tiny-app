@@ -55,7 +55,12 @@ app.set('view engine', 'ejs');
 
 app.get('/', (req, res) => {
   //res.send('Hello!');
-  res.redirect('/login');
+  let user = req.session.user_id;
+  if (user){
+    res.redirect('/urls');
+  } else {
+    res.redirect('/login');
+  }
 });
 
 app.get('/urls', (req, res) => {
@@ -65,6 +70,7 @@ app.get('/urls', (req, res) => {
   // if (user) {
   // }
   let userURLS = urlsForUser(uid, urlDatabase);
+  
   const templateVars = {
     title:"URL Index",
     urls: userURLS,
